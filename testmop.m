@@ -1599,12 +1599,36 @@ end
 % it could be a matrxix 
 % time window for which the process remains constant
 % step controls the distance between 2 paretos nT
+% function p=fda3(p,dim)
+% p.name   = 'fda3';
+% p.pd     = dim;
+% p.od     = 2;
+% p.domain = [-1*ones(dim,1) ones(dim,1)];
+% p.domain(1:5,1) = 0;
+% p.func   = @evaluate;
+
+%     function y=evaluate(x)
+%         global itrCounter step window;
+%         x            =x';
+%         n            =length(x);
+%         t            =(floor(itrCounter/window))/step;
+%         G            =abs(sin(0.5*3.14*t));
+%         F            =10^(2*sin(0.5*pi*t));  %
+%         f1           =sum(x(1:5).^F);
+%         Gtemp        =G*ones(n-5,1);
+%         temp         =x(6:n);
+%         g            =1+G+sum((temp-Gtemp).^2);
+%         f2           =g*(1-(f1/g)^0.5);
+%         y            =[f1,f2];
+%         clear Gtemp temp;
+%     end
+% end 
 function p=fda3(p,dim)
 p.name   = 'fda3';
 p.pd     = dim;
 p.od     = 2;
 p.domain = [-1*ones(dim,1) ones(dim,1)];
-p.domain(1:5,1) = 0;
+p.domain(1,1) = 0;
 p.func   = @evaluate;
 
     function y=evaluate(x)
@@ -1613,10 +1637,10 @@ p.func   = @evaluate;
         n            =length(x);
         t            =(floor(itrCounter/window))/step;
         G            =abs(sin(0.5*3.14*t));
-        F            =10^(2*sin(0.5*pi*t));  %
-        f1           =sum(x(1:5).^F);
-        Gtemp        =G*ones(n-5,1);
-        temp         =x(6:n);
+        F            =2*G;  %10^(2*sin(0.5*pi*t))
+        f1           =x(1)^F;
+        Gtemp        =G*ones(n-1,1);
+        temp         =x(2:n);
         g            =1+G+sum((temp-Gtemp).^2);
         f2           =g*(1-(f1/g)^0.5);
         y            =[f1,f2];
