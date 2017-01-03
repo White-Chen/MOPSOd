@@ -1546,6 +1546,7 @@ p.func   = @evaluate;
 
     function y=evaluate(x)
         global itrCounter step window;
+	x	     =x';
         n            =length(x);
         f1           =x(1);
         t            =(floor(itrCounter/window))/step;
@@ -1556,7 +1557,7 @@ p.func   = @evaluate;
         arbit        =sum(k);
         g            =1+arbit;
         f2           =g*(1-(f1/g)^0.5);
-        y            =[f1;f2];
+        y            =[f1,f2];
         clear temp Gtemp k;
     end
 end 
@@ -1656,7 +1657,7 @@ end
 function p=fda4(p,dim)
 p.name   = 'fda4';
 p.pd     = dim;
-p.od     = 2;
+p.od     = dim-9;
 p.domain = [zeros(dim,1) ones(dim,1)];
 p.func   = @evaluate;
 
@@ -1694,7 +1695,7 @@ end
 function p=fda5(p,dim)
 p.name   = 'fda5';
 p.pd     = dim;
-p.od     = 3;
+p.od     = dim-9;
 p.domain = [zeros(dim,1) ones(dim,1)];
 p.func   = @evaluate;
 
