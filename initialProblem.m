@@ -211,16 +211,14 @@ function initialProblem()
             end
             clear i;
         case 31
-            CostFunction=@(x) wfg(x, 2, 2, 4, 10); %wfg10
-            nVar = 6;
-            VarMin=zeros(1,nVar);
-            VarMax=ones(1,nVar);
-            numOfObj = 2;
-            for i = 1:nVar
-                VarMax(i) = VarMax(i).*(i*2);
-            end
-            clear i;
-        case 32
+            mop = testmop('fda1',20);
+	    CostFunction=@(x) mop.func(x);
+	    nVar = 20;
+	    VarMin = mop.domain(:,1)';
+	    VarMax = mop.domain(:,2)';
+	    numOfObj = 2;
+	    dynamic = 1;
+	case 32
             mop = testmop('fda2',31);
             CostFunction=@(x) mop.func(x);
             nVar = 31;
