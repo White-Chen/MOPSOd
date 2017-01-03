@@ -3,7 +3,7 @@ clear;
 close all;
 %% Problem Definition
 global dmethod itrCounter step window CostFunction nVar nPop niche VarMin VarMax numOfObj VarSize VelMax TestProblem dynamic idealpoint;
-TestProblem=33; 
+TestProblem=34; 
 dynamic = 1;
 initialProblem();
 dmethod = 'te';
@@ -12,8 +12,8 @@ window = 1000;
 itrCounter = 0;
 VarSize=[1 nVar]; 
 VelMax=(VarMax-VarMin); 
-nPop=100;  
-nRep=100;  
+nPop=150;  
+nRep=150;  
 MaxIt=10000; 
 phi1=2.05; 
 phi2=2.05;
@@ -57,7 +57,7 @@ if dynamic  == 1
     set(h,'position',position);
     hold off;
 end
-for itrCounter=980:MaxIt
+for itrCounter=1:MaxIt
     % DeleteFromRep2(particle,weights,idealpoint,25);
     for i=1:nPop
         rep_h=SelectLeader(rep,particle(i),weights,numOfObj,niche);
@@ -89,17 +89,24 @@ for itrCounter=980:MaxIt
         end
 %         particle=DetermineDomination(particle);
 %         nd_particle=GetNonDominatedParticles(particle);
-        rep=[rep
-             particle(i)];
-        rep=DetermineDomination(rep);
-        rep=GetNonDominatedParticles(rep);
-        if numel(rep)>nRep
-            rep = DeleteFromRep(rep,weights,idealpoint,numOfObj,nRep);
-            % rep = DeleteFromRep2(rep,weights,idealpoint,25);
-        end
+%         rep=[rep
+%              particle(i)];
+%         rep=DetermineDomination(rep);
+%         rep=GetNonDominatedParticles(rep);
+%         if numel(rep)>nRep
+%             rep = DeleteFromRep(rep,weights,idealpoint,numOfObj,nRep);
+%             % rep = DeleteFromRep2(rep,weights,idealpoint,25);
+%         end
         
     end
-    
+    rep=[rep
+         particle];
+    rep=DetermineDomination(rep);
+    rep=GetNonDominatedParticles(rep);
+    if numel(rep)>nRep
+        rep = DeleteFromRep(rep,weights,idealpoint,numOfObj,nRep);
+        % rep = DeleteFromRep2(rep,weights,idealpoint,25);
+    end
     disp(['Iteration ' num2str(itrCounter) ': Number of Repository Particles = ' num2str(numel(rep))]);
     w=w*wdamp;
     
@@ -121,12 +128,34 @@ for itrCounter=980:MaxIt
         end
     else
         subplot(1,2,1);
-        rep_costs=GetCosts(rep);
-        plot(rep_costs(1,:),rep_costs(2,:),'rx');
-        hold off;
+        if numOfObj == 2
+            rep_costs=GetCosts(rep);
+            plot(rep_costs(1,:),rep_costs(2,:),'rx');
+            hold off;
+        end
+        if numOfObj == 3
+            rep_costs=GetCosts(rep);
+            plot3(rep_costs(1,:),rep_costs(2,:),...
+    							rep_costs(3,:),'ko'...
+                                );
+            view(-243,29);
+            axis square;
+            grid on;
+            hold off;
+        end
         if mod(itrCounter,window) == 0
             subplot(1,2,2);
-            plot(rep_costs(1,:),rep_costs(2,:),'rx');
+            if numOfObj == 2
+                plot(rep_costs(1,:),rep_costs(2,:),'rx');
+            end
+            if numOfObj == 3
+                plot3(rep_costs(1,:),rep_costs(2,:),...
+                                    rep_costs(3,:),'ko'...
+                                    );
+                view(-243,29);
+                axis square;
+                grid on;
+            end
             hold on;
             % [rep,particle,sigmaArray] = computeSigam(rep,particle,sigmaArray);
             for ss = 1:nPop
@@ -139,9 +168,6 @@ for itrCounter=980:MaxIt
     		clear ss;
         end
     end
-    xlabel('Objective_1');
-    ylabel('Objective_2');
-    legend('Archive');
     title(['Iteration: ',num2str(itrCounter)]);
     drawnow;
     
