@@ -64,9 +64,8 @@
 %                     domain - decision boundary constraints
 %                     func   - ref to objective function
 function mop = testmop(testname, dimension)
-
 mop         =   struct('name',[],'od',[],'pd',[],'domain',[],'func',[]);
-eval(['mop=',testname,'(mop,',num2str(dimension),');']); 
+eval(['mop=',testname,'(mop,',num2str(dimension),');']);
 end
 
 %% ----------Stationary Multi-Objective Benchmark----------
@@ -199,7 +198,6 @@ function p=DTLZ1(p,dim)
  
     %DTLZ evaluation function.
     function y=evaluate(x)
-        x = x';
         n = (M-1) + k; %this is the default
         if size(x,1) ~= n
            error(['Using k = 5, it is required that the number of dimensions be '...
@@ -216,7 +214,7 @@ function p=DTLZ1(p,dim)
            f(ii,:) = 1/2*prod(x(1:M-ii,:),1).*(1 - x(M-ii+1,:)).*(1 + g);
         end
         f(M,:) = 1/2*(1 - x(1,:)).*(1 + g);
-        y = f';
+        y = f;
     end
 end
 
@@ -233,7 +231,6 @@ function p=DTLZ2(p,dim)
  
     %DTLZ evaluation function.
     function y=evaluate(x)
-        x = x';
         n = (M-1) + k; %this is the default
         if size(x,1) ~= n
            error(['Using k = 10, it is required that the number of dimensions be'...
@@ -250,7 +247,7 @@ function p=DTLZ2(p,dim)
               sin(pi/2*x(M-ii+1,:));
         end
         f(M,:) = (1 + g).*sin(pi/2*x(1,:));
-        y = f';
+        y = f;
     end
 end
 
@@ -334,7 +331,6 @@ function p=DTLZ5(p,dim)
  
     %DTLZ5 evaluation function.
     function y=evaluate(x)
-        x = x';
         % Error check: the number of dimensions must be M-1+k
         n = (M-1) + k; %this is the default
         if size(x,1) ~= n
@@ -359,7 +355,7 @@ function p=DTLZ5(p,dim)
               sin(theta(M-ii+1,:));
         end
         f(M,:) = (1 + g).*sin(theta(1,:));
-        y = f';
+        y = f;
     end
 end
 
@@ -415,7 +411,6 @@ function p=DTLZ7(p,dim)
  
     %DTLZ evaluation function.
     function y=evaluate(x)
-        x  = x';
         % Error check: the number of dimensions must be M-1+k
         n = (M-1) + k; %this is the default
         if size(x,1) ~= n
@@ -434,7 +429,7 @@ function p=DTLZ7(p,dim)
         gaux = g(ones(M-1,1),:); %replicates the g function
         h = M - sum(f./(1+gaux).*(1 + sin(3*pi*f)),1);
         f(M,:) = (1 + g).*h;
-        y = f';
+        y = f;
     end
 end
 
@@ -453,7 +448,6 @@ function p=wfg1(p,dim)
     %WFG1 evaluation function.
     function y=evaluate(x)
         % Initialize
-        x = x';
         [noSols, n, S, D, A, Y] = wfg_initialize(x, p.od, k, l, 1);
 
         % Apply first transformation.
@@ -497,7 +491,7 @@ function p=wfg1(p,dim)
         F = h_convex(X(:,1:uLoop));
         F(:,M) = fM;
         F = rep(D*X(:,M), [1,M]) + rep(S, [noSols 1]) .* F;
-        y = F;
+        y = F';
     end
 end
 
@@ -513,7 +507,6 @@ function p=wfg2(p,dim)
     %WFG2 evaluation function.
     function y=evaluate(x)
         % Initialize
-        x = x';
         [noSols, n, S, D, A, Y] = wfg_initialize(x, p.od, k, l, 2);
 
         % Apply first transformation.
@@ -553,7 +546,7 @@ function p=wfg2(p,dim)
         F = h_convex(X(:,1:uLoop));
         F(:,M) = fM;
         F = rep(D*X(:,M), [1,M]) + rep(S, [noSols 1]) .* F;
-        y = F;
+        y = F';
     end
 end
 
@@ -1546,7 +1539,7 @@ p.func   = @evaluate;
 
     function y=evaluate(x)
         global itrCounter step window;
-	x	     =x';
+        x            =x';
         n            =length(x);
         f1           =x(1);
         t            =(floor(itrCounter/window))/step;
@@ -1595,35 +1588,43 @@ p.func   = @evaluate;
     end
 end 
 
+%% FDA2-nsga2
+% x are columnwise and y are rowwise, the input x must be inside the search space and
+% it could be a matrxix 
+% time window for which the process remains constant
+% step controls the distance between 2 paretos nT
+function p=fda2_nsga2(p,dim)
+p.name   = 'fda2_nsga2';
+p.pd     = dim;
+p.od     = 2;
+p.domain = [-1*ones(dim,1) ones(dim,1)];
+p.domain(1,1) = 0;
+p.func   = @evaluate;
+
+    function y=evaluate(x)
+    	global itrCounter params step window;
+        x            =x';
+        n            =length(x);
+        f1           =x(1);
+        t            =2*floor(itrCounter/window)*(window/(step*window-window));
+%         t            =(floor(itrCounter/window))/step;
+        H            =2*sin(0.5*pi*(t-1));
+        temp         =x(2:6);
+        temp2        =x(7:13);
+        g            =1+sum(temp.^2);   
+        Htemp        =sum((temp2-H/4).^2);
+        h            =1-(f1/g)^(2^(H+Htemp));
+        f2           =g*h;
+        y            =[f1,f2];
+        clear temp temp2 Htemp k h;
+    end
+end 
+
 %% FDA3
 % x are columnwise and y are rowwise, the input x must be inside the search space and
 % it could be a matrxix 
 % time window for which the process remains constant
 % step controls the distance between 2 paretos nT
-% function p=fda3(p,dim)
-% p.name   = 'fda3';
-% p.pd     = dim;
-% p.od     = 2;
-% p.domain = [-1*ones(dim,1) ones(dim,1)];
-% p.domain(1:5,1) = 0;
-% p.func   = @evaluate;
-
-%     function y=evaluate(x)
-%         global itrCounter step window;
-%         x            =x';
-%         n            =length(x);
-%         t            =(floor(itrCounter/window))/step;
-%         G            =abs(sin(0.5*3.14*t));
-%         F            =10^(2*sin(0.5*pi*t));  %
-%         f1           =sum(x(1:5).^F);
-%         Gtemp        =G*ones(n-5,1);
-%         temp         =x(6:n);
-%         g            =1+G+sum((temp-Gtemp).^2);
-%         f2           =g*(1-(f1/g)^0.5);
-%         y            =[f1,f2];
-%         clear Gtemp temp;
-%     end
-% end 
 function p=fda3(p,dim)
 p.name   = 'fda3';
 p.pd     = dim;
@@ -1676,7 +1677,7 @@ p.func   = @evaluate;
         for k = 2:p.od-1
             fxtemp      =cos((x(1:p.od-k)*pi)/2);
             fx          =(1+g)*prod(fxtemp)*sin((x(p.od-k+1)*pi)/2);
-            f           =[f,fx]
+            f           =[f,fx];
             clear fxtemp fx;
         end
         fxtemp       =sin((x(1)*pi)/2);
@@ -1695,13 +1696,12 @@ end
 function p=fda5(p,dim)
 p.name   = 'fda5';
 p.pd     = dim;
-p.od     = dim-9;
+p.od     = 2;
 p.domain = [zeros(dim,1) ones(dim,1)];
 p.func   = @evaluate;
 
     function y=evaluate(x)
         global itrCounter step window;
-        x            =x';
         n            =length(x);
         t            =(floor(itrCounter/window))/step;
         temp         =x(p.od:end);
@@ -1716,12 +1716,12 @@ p.func   = @evaluate;
         for k = 2:p.od-1
           fxtemp      =cos((y(1:p.od-k)*pi)/2);
           fx          =(1+g)*prod(fxtemp)*sin((y(p.od-k+1)*pi)/2);
-          f           =[f,fx]
+          f           =[f;fx]
           clear fxtemp fx;
         end
         fxtemp       =sin((y(1)*pi)/2);
         fx           =(1+g)*fxtemp;
-        f            =[f,fx];
+        f            =[f;fx];
         y            =f;
         clear temp gtemp f1temp fxtemp fx f;
     end
