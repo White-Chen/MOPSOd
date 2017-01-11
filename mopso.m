@@ -2,8 +2,9 @@ clc;
 clear;
 close all;
 %% Problem Definition
-global dmethod itrCounter step window CostFunction nVar nPop niche VarMin VarMax numOfObj VarSize VelMax TestProblem dynamic idealpoint;
-TestProblem=34; 
+global colors dmethod itrCounter step window CostFunction nVar nPop niche VarMin VarMax numOfObj VarSize VelMax TestProblem dynamic idealpoint;
+colors = {'bo','go','ro','co','mo','ko','bv','gv','rv','cv','mv','kv','bs','gs','rs','cs','ms','ks'};
+TestProblem=38; 
 dynamic = 1;
 initialProblem();
 dmethod = 'te';
@@ -12,9 +13,11 @@ window = 1000;
 itrCounter = 0;
 VarSize=[1 nVar]; 
 VelMax=(VarMax-VarMin); 
-nPop=150;  
-nRep=150;  
-MaxIt=10000; 
+% nPop=153;
+% nRep=153;
+nPop=100;
+nRep=100;
+MaxIt=step*window; 
 phi1=2.05; 
 phi2=2.05;
 phi=phi1+phi2;  
@@ -30,45 +33,23 @@ particle=CreateEmptyParticle(nPop);
 idealpoint = CreateEmptyParticle(1);
 idealpoint.Cost = Inf*ones(1,numOfObj);
 sigmaArray = [];
-for i=1:nPop
-    particle(i).Velocity=zeros(1,nVar);    
-    tempPosition=unifrnd(0,1,VarSize);
-    particle(i).Position = tempPosition .* (VarMax-VarMin) + VarMin;
-    particle(i).Cost=CostFunction(particle(i).Position);   
-    particle(i).Best.Position=particle(i).Position;
-    particle(i).Best.Cost=particle(i).Cost;
-    idealpoint = update_idealpoint(particle(i),idealpoint);
-    particle(i).T = 0;
-end
-clear i;
+particle = initialSwarm(particle,1,2);
 [particle,weights] = init_weights(particle,numOfObj);
 particle =  init_niche(particle,niche,nPop);
 particle=DetermineDomination(particle); 
 rep=GetNonDominatedParticles(particle); 
-if dynamic  == 1
-    set(0,'units','centimeters');
-    position    =[0 0 51 19.5];
-    h           =figure;
-    set(h,'PaperType','A4'); 
-    set(h,'PaperUnits','centimeters'); 
-    set(h,'paperpositionmode','auto');
-    set(h,'PaperPosition',position);
-    set(h,'units','centimeters');
-    set(h,'position',position);
-    hold off;
-end
-for itrCounter=1:MaxIt
+for itrCounter=900:MaxIt
     % DeleteFromRep2(particle,weights,idealpoint,25);
-    for i=1:nPop
+    
+    for i=randperm(nPop,nPop)
         rep_h=SelectLeader(rep,particle(i),weights,numOfObj,niche);
 %         rep_h=SelectLeader2(rep,i);
         if (particle(i).T <= Ta)
 	        particle(i).Velocity=w*particle(i).Velocity ...
-	                             +c1*rand*(particle(i).Best.Position - particle(i).Position)...
-	                             +c2*rand*(rep_h.Position -  particle(i).Position);
+	                             +c1*rand(VarSize).*(particle(i).Best.Position - particle(i).Position)...
+	                             +c2*rand(VarSize).*(rep_h.Position -  particle(i).Position);
 	        particle(i).Velocity=min(max(particle(i).Velocity,-VelMax),+VelMax);
 	        particle(i).Position=particle(i).Position + particle(i).Velocity;
-	        
         else
             particle(i) = Mutate(particle(i),rep_h,VarMin,VarMax);
     	end
@@ -89,93 +70,31 @@ for itrCounter=1:MaxIt
         end
 %         particle=DetermineDomination(particle);
 %         nd_particle=GetNonDominatedParticles(particle);
-%         rep=[rep
-%              particle(i)];
-%         rep=DetermineDomination(rep);
-%         rep=GetNonDominatedParticles(rep);
-%         if numel(rep)>nRep
-%             rep = DeleteFromRep(rep,weights,idealpoint,numOfObj,nRep);
-%             % rep = DeleteFromRep2(rep,weights,idealpoint,25);
-%         end
+        rep=[rep
+             particle(i)];
+        rep=DetermineDomination(rep);
+        rep=GetNonDominatedParticles(rep);
+        if numel(rep)>nRep
+            rep = DeleteFromRep(rep,weights,idealpoint,numOfObj,nRep);
+            % rep = DeleteFromRep2(rep,weights,idealpoint,25);
+        end
         
     end
-    rep=[rep
-         particle];
-    rep=DetermineDomination(rep);
-    rep=GetNonDominatedParticles(rep);
-    if numel(rep)>nRep
-        rep = DeleteFromRep(rep,weights,idealpoint,numOfObj,nRep);
-        % rep = DeleteFromRep2(rep,weights,idealpoint,25);
-    end
+%     rep=[rep
+%          particle];
+%     rep=DetermineDomination(rep);
+%     rep=GetNonDominatedParticles(rep);
+%     if numel(rep)>nRep
+%         rep = DeleteFromRep(rep,weights,idealpoint,numOfObj,nRep);
+%         % rep = DeleteFromRep2(rep,weights,idealpoint,25);
+%     end
     disp(['Iteration ' num2str(itrCounter) ': Number of Repository Particles = ' num2str(numel(rep))]);
     w=w*wdamp;
-    
-    if dynamic == 0
-        if numOfObj == 2
-            rep_costs=GetCosts(rep);
-            plot(rep_costs(1,:),rep_costs(2,:),'rx');
-            hold off;
-        end
-        if numOfObj == 3
-            rep_costs=GetCosts(rep);
-            plot3(rep_costs(1,:),rep_costs(2,:),...
-    							rep_costs(3,:),'ko'...
-                                );
-            view(-243,29);
-            axis square;
-            grid on;
-            hold off;
-        end
-    else
-        subplot(1,2,1);
-        if numOfObj == 2
-            rep_costs=GetCosts(rep);
-            plot(rep_costs(1,:),rep_costs(2,:),'rx');
-            hold off;
-        end
-        if numOfObj == 3
-            rep_costs=GetCosts(rep);
-            plot3(rep_costs(1,:),rep_costs(2,:),...
-    							rep_costs(3,:),'ko'...
-                                );
-            view(-243,29);
-            axis square;
-            grid on;
-            hold off;
-        end
-        if mod(itrCounter,window) == 0
-            subplot(1,2,2);
-            if numOfObj == 2
-                plot(rep_costs(1,:),rep_costs(2,:),'rx');
-            end
-            if numOfObj == 3
-                plot3(rep_costs(1,:),rep_costs(2,:),...
-                                    rep_costs(3,:),'ko'...
-                                    );
-                view(-243,29);
-                axis square;
-                grid on;
-            end
-            hold on;
-            % [rep,particle,sigmaArray] = computeSigam(rep,particle,sigmaArray);
-            for ss = 1:nPop
-            	particle(ss).Cost=CostFunction(particle(ss).Position);
-                particle(ss).Best.Cost = CostFunction(particle(ss).Position);
-        	end
-        	for ss = 1:numel(rep)
-        		rep(ss).Cost = CostFunction(rep(ss).Position);
-    		end
-    		clear ss;
-        end
+    swarm2pic(rep);
+    if mod(itrCounter,window) == 0 && dynamic == 1
+        particle = initialSwarm(particle,0.2);
+        [particle,rep] = reevalute(particle,rep);
     end
-    title(['Iteration: ',num2str(itrCounter)]);
-    drawnow;
-    
 end
-costs=GetCosts(particle);
-rep_costs=GetCosts(rep);
-figure;
-plot(costs(1,:),costs(2,:),'b.');
-hold on;
-plot(rep_costs(1,:),rep_costs(2,:),'rx');
-legend('Main Population','Repository');
+swarm2pic(rep,particle);
+clearvars -except particle rep
